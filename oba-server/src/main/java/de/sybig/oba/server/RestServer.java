@@ -14,6 +14,7 @@ import java.net.InetAddress;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
@@ -152,6 +153,8 @@ public class RestServer {
         
         File ontoDir = getOntologyDir(properties);
         
+        //ArrayList that contains the properties files for virtual ontologies
+        ArrayList<Properties> virtOnto=new ArrayList<Properties>();
         logger.debug("loading ontologies from {}", ontoDir);
         File[] files = ontoDir.listFiles();
         for (File f : files) {
@@ -159,12 +162,18 @@ public class RestServer {
                 continue;
             }
             Properties p = new Properties();
+            
             try {
                 logger.info("load property file {}", f);
                 FileReader fr = new FileReader(f);
                 p.load(fr);
                 fr.close();
-                oh.addOntology(p);
+                if(p.getProperty("type").trim().equals("virtual"))
+                {
+                    virtOnto.add(p);
+                }
+                else
+                    oh.addOntology(p);
                 
             } catch (FileNotFoundException e) {
                 logger.warn(
@@ -177,6 +186,10 @@ public class RestServer {
                 // e.printStackTrace();
             }
         }
+        
+        for(Properties p:virtOnto)
+            oh.addVirtualOntology(p);
+        
     }
     
     private File getOntologyDir(Properties properties) {

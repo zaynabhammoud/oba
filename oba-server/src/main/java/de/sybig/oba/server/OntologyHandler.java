@@ -240,6 +240,61 @@ public final class OntologyHandler {
 		ontologyPropertiesMap.put(name, p);
 	}
 
+        
+        public void addVirtualOntology(Properties p)
+        {
+            String[] files=p.getProperty("file").split("/");
+//            if (files.length!=2) {
+//			logger.error(
+//					"could not load the virtual ontology , will skip the ontology");
+//		}
+            for(int i=0;i<files.length;i++)
+                logger.info("Files: "+files[i]);
+            File ontoFile1=new File(files[0].trim());
+            File ontoFile2=new File(files[1].trim());
+            
+		if (!ontoFile1.isAbsolute()) {
+			ontoFile1 = new File(generalProps.getProperty("ontology_directory",
+					System.getProperty("java.io.tmpdir")),
+					p.getProperty("file").split("/")[0]);
+		}
+                if (!ontoFile2.isAbsolute()) {
+			ontoFile2 = new File(generalProps.getProperty("ontology_directory",
+					System.getProperty("java.io.tmpdir")),
+					p.getProperty("file").split("/")[1]);
+		}
+		if (!ontoFile1.canRead()) {
+			logger.error(
+					"could not load the {} ontology , will skip the ontology",ontoFile1.getName());
+		}
+                if (!ontoFile2.canRead()) {
+			logger.error(
+					"could not load the {} ontology , will skip the ontology",ontoFile2.getName());
+		}
+		String name = p.getProperty("identifier").trim();
+		ObaOntology po = new ObaOntology();
+		po.setProperties(p);
+		OntologyResource onto = new OntologyResource();
+		onto.setOntology(po);
+		
+                po.setOwlURI(IRI.create(new File("Alignment.obo")));
+
+		onto.setOntology(po);
+		if (p.getProperty("load_lazy", "false").equalsIgnoreCase("true")) {
+			preparedOntologyMap.put(name, onto);
+		} else {
+			try {
+				po.init();
+				ontologyMap.put(name, onto);
+			} catch (OWLOntologyCreationException e) {
+				logger.error("could not load ontology {}, due to {}",
+						name, e.getMessage());
+				return;
+			}
+		}
+		ontologyPropertiesMap.put(name, p);
+        }
+        
         public Properties getOntologyProperties(String name){
            return ontologyPropertiesMap.get(name);
         }
