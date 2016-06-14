@@ -172,8 +172,9 @@ public class RestServer {
                 {
                     virtOnto.add(p);
                 }
-                else
+                else{
                     oh.addOntology(p);
+                }
                 
             } catch (FileNotFoundException e) {
                 logger.warn(
@@ -183,12 +184,12 @@ public class RestServer {
                 logger.warn(
                         "could not load the ontology {} specified in property file {}. The file could not be read.",
                         p, f);
-                // e.printStackTrace();
             }
         }
         
-        for(Properties p:virtOnto)
+        for(Properties p:virtOnto){
             oh.addVirtualOntology(p);
+        }
         
     }
     
