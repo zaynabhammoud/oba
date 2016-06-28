@@ -52,10 +52,10 @@ public class ObaOntology {
     private final Version luceneVersion = Version.LUCENE_24;
     private IRI iri;
     private RAMDirectory idx;
-    private OWLDataFactory dataFactory;
+    OWLDataFactory dataFactory;
     private OWLOntologyManager manager;
-    private Set<ObaClass> orphanChildren = new HashSet<ObaClass>();
-    private Set<ObaClass> obsoleteClasses = new HashSet<ObaClass>();
+    Set<ObaClass> orphanChildren = new HashSet<ObaClass>();
+    Set<ObaClass> obsoleteClasses = new HashSet<ObaClass>();
     private Logger logger = LoggerFactory.getLogger(ObaOntology.class);
     private List<String> indexAnnotations;
     private final String OBSOLTE = "is_obsolete";
@@ -244,7 +244,7 @@ public class ObaOntology {
      * @throws LockObtainFailedException
      * @throws IOException
      */
-    private void scanClasses(OWLOntology ontology)
+    protected void scanClasses(OWLOntology ontology)
             throws CorruptIndexException, LockObtainFailedException,
             IOException {
         IndexWriter writer = new IndexWriter(idx, new StandardAnalyzer(

@@ -243,8 +243,18 @@ public final class OntologyHandler {
         
         public void addVirtualOntology(Properties p){
 		String name = p.getProperty("identifier").trim();
-		ObaOntology po = new ObaOntology();
+		ObaVirtualOntology po = new ObaVirtualOntology();
 		po.setProperties(p);
+                String[] ontologies=p.getProperty("file").trim().split("/");
+                if (!containsOntology(ontologies[0]) || !containsOntology(ontologies[1]) ) {
+			logger.error(
+					"could not load the ontology {}, will skip the ontology",
+					name);
+		}
+                po.setOntA(getOntology(ontologies[0]));
+                po.setOntB(getOntology(ontologies[1]));
+                if(po.ontA!=null && po.ontB!=null)
+                    logger.info("Ontologies added successfully");
 		OntologyResource onto = new OntologyResource();
 		onto.setOntology(po);
 		

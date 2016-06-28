@@ -168,8 +168,7 @@ public class RestServer {
                 FileReader fr = new FileReader(f);
                 p.load(fr);
                 fr.close();
-                if(p.getProperty("type").trim().equals("virtual"))
-                {
+                if(p.getProperty("type").trim().equals("virtual")){
                     virtOnto.add(p);
                 }
                 else{
