@@ -14,7 +14,6 @@ import edu.cmu.lti.lexical_db.NictWordNet;
  *
  * @author zaynab
  */
-//TODO
 public class Scores {
  
     /**
@@ -29,24 +28,17 @@ public class Scores {
         return jw.similarity(s1,s2);
     }
    
-//    /**
-//     * Returns an ArrayList containing the common characters between two strings
-//     * 
-//     * @param s1:<code>String</code>
-//     * @param s2:<code>String</code>
-//     * @return common:<code>ArrayList</code>
-//     */
-//    private ArrayList<Character> com(String s1,String s2){
-//        ArrayList<Character> common=new ArrayList<Character>();
-//        for(int i=0;i<s1.length();i++){
-//            for(int j=0;j<s2.length();j++){
-//                if(s1.charAt(i)==s2.charAt(j)/* && !common.contains(s1.charAt(i))*/){
-//                    common.add(s1.charAt(i));
-//                }
-//            }
-//        }
-//        return common;
-//    }
+    
+    /**
+	 * Computes the similarity between two Strings
+	 * @param s1: the first string to compare
+	 * @param s2: the second string to compare
+	 * @return the Levenshtein similarity between st1 and st2
+	 */
+    public static double LevenSimilarity(String s1,String s2){
+        Levenshtein l = new Levenshtein();
+        return l.distance(s1, s2);
+    }
     
     //Public Methods
 	
@@ -154,7 +146,9 @@ public class Scores {
         return winkler;
     }
     
-    public double JiangConrath(String s1,String s2){
+    
+    //FIXME with concepts instead of Strings
+    public static double JiangConrath(String s1,String s2){
         ILexicalDatabase db = new NictWordNet();
         RelatednessCalculator jcn = new JiangConrath(db);
         return jcn.calcRelatednessOfWords(s1,s2);
