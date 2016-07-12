@@ -14,11 +14,13 @@ import java.util.ArrayList;
 
 public class Alignment {
     
+    //FIXME
     private double semanticFilteringLowThreshold=0.2;
     
     /**
      * 
      */
+    //TODO
     protected void similaritySearch()
     {
     }
@@ -71,8 +73,7 @@ public class Alignment {
      */
     protected boolean semanticFilteringAccepts(String OntResName,String SimString)
     {
-        Scores s=new Scores();
-        double sim=s.JiangConrath(OntResName,SimString);
+        double sim=Scores.JiangConrath(OntResName,SimString);
         if(sim==-1 || sim>semanticFilteringLowThreshold){
             return true;
         }
@@ -84,13 +85,14 @@ public class Alignment {
      *candidates NameString in matrix; if the concepts name similarity to 
      *candidate NameString be more than SimilarityValue, candidate 
      *MostSimilarOntRes is replaced by this new concept and SimilarityValue is 
-     *also updated. Once all ontology concepts were compared to matrix 
+     *also updated.Once all ontology concepts were compared to matrix
      *candidates, each SimMatrix[i][j] would contain ontology concept that is 
-     *most similar concept to original SimString. For comparing the extracted 
+     *most similar concept to original SimString.For comparing the extracted 
      *synonyms and hypernyms to ontology concepts, we simply use the Levenshtein
      *similarity measure since we know the ISUB failed in previous step and we
      *want to use an alternative measure.
      */
+    //TODO
     protected void calculateSimilarities()
     {
     }
@@ -98,6 +100,7 @@ public class Alignment {
     /**
      *
      */
+    //TODO
     protected void findCandidate()
     {
     }
@@ -105,6 +108,7 @@ public class Alignment {
     /**
      *
      */
+    //TODO
     protected void WSD()
     {
         
