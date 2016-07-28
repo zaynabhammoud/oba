@@ -66,7 +66,7 @@ public class GenericConnector<C extends OntologyClass, CL extends AbstractOntolo
 
     public CL searchCls(final String pattern, final String field) throws ConnectException {
         List fieldList = new LinkedList<String>();
-        return searchCls(pattern, fieldList);
+        return (CL)searchCls(pattern, fieldList);
     }
 
     /**

@@ -16,7 +16,7 @@ public class GoFunctions extends OntologyFunctions implements
     private Logger log = LoggerFactory.getLogger(GoFunctions.class);
 
     /**
-     * A class providing ontology functions specific for Cytomer.
+     * A class providing ontology functions specific for GO.
      *
      */
     public GoFunctions() {

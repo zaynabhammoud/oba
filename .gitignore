@@ -1,1 +1,11 @@
 /oba-go/target/
+/oba-common/target/
+/oba-server/target/
+/oba-client/target/
+/oba-cytomer/target/
+/oba-tribolium/target/
+/alignment/target/
+/oba-alignment/target/
+/oba-flyBase/target/
+/Mapping/target/
+/oba-mapping/target/
