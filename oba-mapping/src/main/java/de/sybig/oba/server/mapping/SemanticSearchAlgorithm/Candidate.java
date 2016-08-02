@@ -5,6 +5,8 @@
  */
 package de.sybig.oba.server.mapping.SemanticSearchAlgorithm;
 
+import de.sybig.oba.server.ObaClass;
+
 /**
  *
  * @author zaynab
@@ -12,11 +14,14 @@ package de.sybig.oba.server.mapping.SemanticSearchAlgorithm;
 public class Candidate{
 
     private String NameString, MostSimilarOntRes;
+    private ObaClass cls,clsMapped;
     private double SimilarityValue;
 
-    protected Candidate(String name, String similar, double simValue) {
-        NameString = name;
-        MostSimilarOntRes = similar;
+    protected Candidate(ObaClass cls, ObaClass similar, double simValue) {
+        this.cls=cls;
+        clsMapped=similar;
+        NameString = cls.getProperty("label").getValue();
+        MostSimilarOntRes = clsMapped.getProperty("label").getValue();
         SimilarityValue = simValue;
     }
 
@@ -45,9 +50,25 @@ public class Candidate{
         this.SimilarityValue = SimilarityValue;
     }
 
+    public ObaClass getCls() {
+        return cls;
+    }
+
+    public void setCls(ObaClass cls) {
+        this.cls = cls;
+    }
+
+    public ObaClass getClsMapped() {
+        return clsMapped;
+    }
+
+    public void setClsMapped(ObaClass clsMapped) {
+        this.clsMapped = clsMapped;
+    }
+
     @Override
     public String toString() {
-        return NameString+" , "+MostSimilarOntRes+" , "+String.valueOf(SimilarityValue);
+        return cls.toStringID()+","+NameString+" , "+clsMapped.toStringID()+","+MostSimilarOntRes+" , "+String.valueOf(SimilarityValue);
     }
 
     public int compareTo(Candidate c) {

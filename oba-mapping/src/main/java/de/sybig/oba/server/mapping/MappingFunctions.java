@@ -23,6 +23,7 @@ import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import javax.ws.rs.*;
 import org.semanticweb.owlapi.model.OWLClass;
 import org.slf4j.Logger;
@@ -69,6 +70,7 @@ public class MappingFunctions extends OntologyFunctions implements
     @Produces("text/html, text/plain, application/json")
     public String writeCSV() throws IOException {
         log.info("Writing Started");
+        Scores sc=new Scores();
         String timeStamp = new SimpleDateFormat("yyyy.MM.dd.HH.mm.ss").format(new Date());
         File file = new File("C:/Users/mashi/Desktop/FBbtBeetle--" + timeStamp + ".csv");
         if (!file.exists()) {
@@ -98,26 +100,16 @@ public class MappingFunctions extends OntologyFunctions implements
         writer.append("Fly Class ID,Fly Class Label,Beetle Class ID,Beetle Class Label,Score\n");
         for (String s : data) {
             String[] sp = s.split(",");
-//            log.info("-----"+sp[1]);
-            String[] fbbtID = sp[0].split("FBbt");
-//            log.info(fbbtID[1]);
-//            log.info("-----"+sp[0]);
-            String[] trOnID = sp[1].split("TrOn");
-//            log.info(trOnID[1]);
 
+            String[] fbbtID = sp[0].split("FBbt");
+            String[] trOnID = sp[1].split("TrOn");
+            
             ObaClass cls1 = new ObaClass(ont1.getCls("FBbt" + fbbtID[1], "http://purl.org/obo/owlapi/fly_anatomy.ontology#"), ont1.getOntology().getOntology());
             ObaClass cls2 = new ObaClass(ont2.getCls("TrOn" + trOnID[1], "http://purl.org/obo/owlapi/tribolium.anatomy#"), ont2.getOntology().getOntology());
-            if (cls2 == null) {
-                log.info("Tribolium Class Null");
-                return "TrOn Class Null";
-            }
-            if (cls1 == null) {
-                log.info("FlyBase Class Null");
-                return "FBbt Class Null";
-            }
+
             String name1 = processString(cls1.getProperty("label").getValue());
             String name2 = processString(cls2.getProperty("label").getValue());
-            String score = StringKernelCal(name1, name2);
+            double score = sc.StringKernel(name1, name2);
             writer.append("FBbt" + fbbtID[1] + "," + name1 + "," + "TrOn" + trOnID[1] + "," + name2 + "," + score + "\n");
             writer.flush();
         }
@@ -134,6 +126,7 @@ public class MappingFunctions extends OntologyFunctions implements
 
         ObaVirtualOntology ovo=(ObaVirtualOntology) onto.getOntology();
         ArrayList<String> labels1,labels2;
+        HashMap<String,Double> thds=ovo.getThds();
         labels1=ovo.getLabelsA();
         labels2=ovo.getLabelsB();
         Scores s=new Scores();
@@ -152,7 +145,7 @@ public class MappingFunctions extends OntologyFunctions implements
                 double score3 = s.StringKernel(label11, label22);
                 double score4=s.DamerauDistance(label11, label22);
                 double score5=s.QGram(label11, label22, 2);
-                if (score1 > 0.1 && score2 < 10 && score3 > 0.4 && score4<5 && score5<10) {
+                if (score1 > thds.get("ISUB") && score2 < thds.get("Leven") && score3 > thds.get("StringKernel") && score4<thds.get("Damerau") && score5<thds.get("Qgram")) {
                     out +=label1 + ","+ label2 + "," + s.winkler(label11, label22) + "," + score2 + "," + score3 + "," + score1+","+s.NormalizedLevenDistance(label11, label22) +","+score4+"," +s.LCS(label11, label22) +","+s.MetricLCS(label11, label22) +","+s.NGram(label11, label22, 2)+","+score5+","+s.PreComputedCosine(label11, label22, 2)+ "\n";
                 }
             }
@@ -176,21 +169,6 @@ public class MappingFunctions extends OntologyFunctions implements
         return label.toLowerCase().replace("larval", "larva").replace("l1", "larva").replace("_", " ").replace("-", " ").trim().replace("ium", "");
     }
 
-    /**
-     *
-     * @param s1
-     * @param s2
-     * @return
-     */
-    @GET
-    @Path("StringKErnelCal/{s}/{t}")
-    @Produces("text/html, text/plain, application/json")
-    public String StringKernelCal(@PathParam("s") String s1, @PathParam("t") String s2) {
-        String out;
-        StringKernel sk = new StringKernel();
-        out = String.valueOf(sk.K(s1, s2));
-        return out;
-    }
 
     @GET
     @Path("getExact/")

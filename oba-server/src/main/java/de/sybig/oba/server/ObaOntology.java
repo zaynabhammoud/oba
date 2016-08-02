@@ -47,7 +47,7 @@ import org.slf4j.LoggerFactory;
 public class ObaOntology {
 
     private OWLOntology onto;
-    private Properties properties;
+    protected Properties properties;
     private static final int MAX_HITS = 500;
     private final Version luceneVersion = Version.LUCENE_24;
     private IRI iri;
