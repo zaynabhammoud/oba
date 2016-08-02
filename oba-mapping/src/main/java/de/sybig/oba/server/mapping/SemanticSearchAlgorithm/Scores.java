@@ -124,7 +124,7 @@ public class Scores {
      * @return the Cosine Distance between s1 and s2
      */
     public double PreComputedCosine(String s1, String s2, int n) throws Exception {
-        KShingling ks = new KShingling(2);
+        KShingling ks = new KShingling(n);
         StringProfile profile1 = ks.getProfile(s1);
         StringProfile profile2 = ks.getProfile(s2);
         return profile1.cosineSimilarity(profile2);
