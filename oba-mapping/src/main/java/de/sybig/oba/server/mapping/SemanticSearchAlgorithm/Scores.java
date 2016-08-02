@@ -1,7 +1,6 @@
 /*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
+ * For more information about each metric, please see : 
+ * https://github.com/tdebatty/java-string-similarity
  */
 package de.sybig.oba.server.mapping.SemanticSearchAlgorithm;
 
@@ -42,7 +41,95 @@ public class Scores {
         Levenshtein l = new Levenshtein();
         return l.distance(s1, s2);
     }
-    
+
+    /**
+     * Computes the Normalized Levenshtein similarity between two Strings
+     *
+     * @param s1: the first string to compare
+     * @param s2: the second string to compare
+     * @return the Normalized Levenshtein similarity between s1 and s2
+     */
+    public double NormalizedLevenDistance(String s1, String s2) {
+        NormalizedLevenshtein l = new NormalizedLevenshtein();
+        return l.distance(s1, s2);
+    }
+
+    /**
+     * Computes the Damerau Distance between two Strings
+     *
+     * @param s1: the first string to compare
+     * @param s2: the second string to compare
+     * @return the Damerau Distance between s1 and s2
+     */
+    public double DamerauDistance(String s1, String s2) {
+        Damerau d = new Damerau();
+        return d.distance(s1, s2);
+    }
+
+    /**
+     * Computes the LongestCommonSubsequence between two Strings It's equal to
+     * |s1|+|s2|-2|LCS(s1,s2)|
+     *
+     * @param s1: the first string to compare
+     * @param s2: the second string to compare
+     * @return the LongestCommonSubsequence between s1 and s2
+     */
+    public double LCS(String s1, String s2) {
+        LongestCommonSubsequence d = new LongestCommonSubsequence();
+        return d.distance(s1, s2);
+    }
+
+    /**
+     * Computes the Metric LongestCommonSubsequence between two Strings It's
+     * equal to 1 - |LCS(s1, s2)| / max(|s1|, |s2|)
+     *
+     * @param s1: the first string to compare
+     * @param s2: the second string to compare
+     * @return the LongestCommonSubsequence between s1 and s2
+     */
+    public double MetricLCS(String s1, String s2) {
+        MetricLCS d = new MetricLCS();
+        return d.distance(s1, s2);
+    }
+
+    /**
+     * Computes the N-Gram Distance between two Strings
+     *
+     * @param s1: the first string to compare
+     * @param s2: the second string to compare
+     * @return the N-Gram Distance between s1 and s2
+     */
+    public double NGram(String s1, String s2, int n) {
+        NGram ngram = new NGram(n);
+        return ngram.distance(s1, s2);
+    }
+
+    /**
+     * Computes the Q-Gram Distance between two Strings
+     *
+     * @param s1: the first string to compare
+     * @param s2: the second string to compare
+     * @return the Q-Gram Distance between s1 and s2
+     */
+    public double QGram(String s1, String s2, int n) {
+        QGram qgram = new QGram(n);
+        return qgram.distance(s1, s2);
+    }
+
+    /**
+     * Computes the Cosine Distance between two Strings
+     *
+     * @param s1: the first string to compare
+     * @param s2: the second string to compare
+     * @return the Cosine Distance between s1 and s2
+     */
+    public double PreComputedCosine(String s1, String s2, int n) throws Exception {
+        KShingling ks = new KShingling(2);
+        StringProfile profile1 = ks.getProfile(s1);
+        StringProfile profile2 = ks.getProfile(s2);
+        return profile1.cosineSimilarity(profile2);
+    }
+
     /**
      * Computes the Kernel similarity between two Strings
      *
@@ -50,21 +137,21 @@ public class Scores {
      * @param s2: the second string to compare
      * @return the StringKernel similarity between s1 and s2
      */
-    public double StringKernel(String s1,String s2){
-        StringKernel sk=new StringKernel();
+    public double StringKernel(String s1, String s2) {
+        StringKernel sk = new StringKernel();
         return sk.K(s1, s2);
     }
-        
+
     //FIXME with concepts instead of Strings
     public double JiangConrath(String s1, String s2) {
         ILexicalDatabase db = new NictWordNet();
         RelatednessCalculator jcn = new JiangConrath(db);
         return jcn.calcRelatednessOfWords(s1, s2);
     }
-    
+
     /* Source : https://github.com/AgreementMakerLight/AML-Compound/blob/master/src/aml/util/ISub.java
      * @author : Daniela Oliveira
-    */
+     */
     //Public Methods
     /**
      * Computes the similarity between two Strings
@@ -175,8 +262,5 @@ public class Scores {
         double winkler = commonPrefixLength * 0.1 * (1 - commonality);
         return winkler;
     }
-
-
-    
 
 }
