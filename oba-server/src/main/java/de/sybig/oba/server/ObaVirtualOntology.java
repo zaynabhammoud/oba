@@ -15,6 +15,7 @@ import org.semanticweb.owlapi.model.OWLClass;
 import org.semanticweb.owlapi.model.OWLDeclarationAxiom;
 import org.semanticweb.owlapi.model.OWLEntity;
 import org.semanticweb.owlapi.model.OWLOntology;
+import org.semanticweb.owlapi.model.OWLOntologyCreationException;
 
 /**
  *
@@ -34,7 +35,6 @@ public class ObaVirtualOntology extends ObaOntology {
      */
     public void setOntA(OntologyResource onto) {
         ontA = onto;
-        exportClasses(onto.getOntology().getOntology(),'A');
     }
 
     /**
@@ -45,7 +45,6 @@ public class ObaVirtualOntology extends ObaOntology {
      */
     public void setOntB(OntologyResource onto) {
         ontB = onto;
-        exportClasses(onto.getOntology().getOntology(),'B');
     }
 
     public OntologyResource getOntA() {
@@ -93,6 +92,12 @@ public class ObaVirtualOntology extends ObaOntology {
             throws CorruptIndexException, LockObtainFailedException,
             IOException {
 
+    }
+    
+    @Override
+    public synchronized void init() throws OWLOntologyCreationException {
+        exportClasses(ontA.getOntology().getOntology(),'A');
+        exportClasses(ontB.getOntology().getOntology(),'B');
     }
 
     public void exportClasses(OWLOntology ontology,char letter) {
