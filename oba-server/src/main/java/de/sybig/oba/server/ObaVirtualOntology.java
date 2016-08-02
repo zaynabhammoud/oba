@@ -23,6 +23,8 @@ import org.semanticweb.owlapi.model.OWLOntology;
 public class ObaVirtualOntology extends ObaOntology {
 
     OntologyResource ontA, ontB;
+    ArrayList<OWLClass> clsA, clsB;
+    ArrayList<String> labelsA, labelsB;
 
     /**
      * Sets the ontology used in iteration. We consider that the OntA is one
@@ -32,6 +34,7 @@ public class ObaVirtualOntology extends ObaOntology {
      */
     public void setOntA(OntologyResource onto) {
         ontA = onto;
+        exportClasses(onto.getOntology().getOntology(),'A');
     }
 
     /**
@@ -42,6 +45,7 @@ public class ObaVirtualOntology extends ObaOntology {
      */
     public void setOntB(OntologyResource onto) {
         ontB = onto;
+        exportClasses(onto.getOntology().getOntology(),'B');
     }
 
     public OntologyResource getOntA() {
@@ -51,6 +55,24 @@ public class ObaVirtualOntology extends ObaOntology {
     public OntologyResource getOntB() {
         return ontB;
     }
+
+    public ArrayList<OWLClass> getClsA() {
+        return clsA;
+    }
+
+    public ArrayList<OWLClass> getClsB() {
+        return clsB;
+    }
+
+    public ArrayList<String> getLabelsA() {
+        return labelsA;
+    }
+
+    public ArrayList<String> getLabelsB() {
+        return labelsB;
+    }
+    
+    
 
     /**
      * Get the root node of the ontology. The root is returned as proxy from
@@ -70,13 +92,13 @@ public class ObaVirtualOntology extends ObaOntology {
     protected void scanClasses(OWLOntology ontology)
             throws CorruptIndexException, LockObtainFailedException,
             IOException {
+
     }
 
-    public ArrayList exportClasses(OWLOntology ontology) {
+    public void exportClasses(OWLOntology ontology,char letter) {
         ArrayList<OWLClass> outClasses = new ArrayList<OWLClass>();
+        ArrayList<String> labels = new ArrayList<String>();
         Set<OWLDeclarationAxiom> classes = ontology.getAxioms(AxiomType.DECLARATION);
-        int counter = 0;
-        clsLoop:
         for (OWLDeclarationAxiom c : classes) {
 
             OWLEntity entity = c.getSignature().iterator().next();
@@ -86,9 +108,13 @@ public class ObaVirtualOntology extends ObaOntology {
             }
             OWLClass cls = (OWLClass) entity;
             outClasses.add(cls);
-            counter++;
+            ObaClass oCls = new ObaClass(cls, ontology);
+            labels.add(oCls.getProperty("label").getValue());
         }
-        return outClasses;
+        switch(letter){
+            case 'A':labelsA=labels;clsA=outClasses;break;
+            case 'B':labelsB=labels;clsB=outClasses;;break;
+        }
     }
 
 }
