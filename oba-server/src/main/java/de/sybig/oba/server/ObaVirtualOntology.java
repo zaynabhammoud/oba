@@ -5,9 +5,13 @@
  */
 package de.sybig.oba.server;
 
+import de.sybig.oba.server.mapping.SemanticSearchAlgorithm.Candidate;
+import de.sybig.oba.server.mapping.SemanticSearchAlgorithm.Scores;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
 import java.util.Set;
 import org.apache.lucene.index.CorruptIndexException;
 import org.apache.lucene.store.LockObtainFailedException;
@@ -29,6 +33,7 @@ public class ObaVirtualOntology extends ObaOntology {
     ArrayList<String> labelsA, labelsB;
     HashMap<String, Double> thds;
     HashMap<String,Double> weights;
+    private final static int n=2;
 
     public HashMap<String, Double> getThds() {
         return thds;
@@ -128,7 +133,55 @@ public class ObaVirtualOntology extends ObaOntology {
             weights.put(we[0], Double.valueOf(we[1]));
         }
     }
-
+    public List<Candidate> align() throws Exception{
+        OWLOntology ont1=ontA.ontology.getOntology(),ont2=ontB.ontology.getOntology();
+        List<Candidate> outList=new ArrayList<Candidate>();
+        Scores s = new Scores();
+        int countClasses1=clsA.size();
+        int countClasses2=clsB.size();
+        for (int i = 0; i < countClasses1 / 2; i++) {
+            for (int j = 0; j < countClasses2; j++) {
+                Candidate c=new Candidate(new ObaClass(clsA.get(i),ont1),new ObaClass(clsA.get(j),ont2));
+                c.setSimilarityValue(getAggregatedScore(c.getNameString(),c.getMostSimilarOntRes()));
+                outList.add(c);
+            }
+        }
+       return outList;
+    }
+    
+     protected String processString(String label) {
+        return label.toLowerCase().replace("larval", "larva").replace("l1", "larva").replace("_", " ").replace("-", " ").trim().replace("ium", "");
+    }
+     
+    protected double getAggregatedScore(String labelA,String labelB) throws Exception{
+        double score=0.0;
+        int sum=0;
+        Scores s=new Scores();
+        labelA=processString(labelA);
+        labelB=processString(labelB);
+        
+        score+=s.ISUBSimilarity(labelA, labelB)*weights.get("ISUB");
+        sum+=weights.get("ISUB");
+        
+        score+=(1-s.NormalizedLevenDistance(labelA, labelB))*weights.get("NormLeven");
+        sum+=weights.get("NormLeven");
+        
+        score+=(1-s.MetricLCS(labelA, labelB))*weights.get("MetricLCS");
+        sum+=weights.get("MetricLCS");
+        
+        score+=s.NGram(labelA, labelB,n)*weights.get("NGram");
+        sum+=weights.get("NGram");
+        
+        score+=s.StringKernel(labelA, labelB)*weights.get("StringKernel");
+        sum+=weights.get("StringKernel");
+        
+        score+=s.PreComputedCosine(labelA, labelB,n)*weights.get("cosine");
+        sum+=weights.get("cosine");
+        
+        score=score/sum;
+        return score;
+    }
+    
     public void exportClasses(OWLOntology ontology,char letter) {
         ArrayList<OWLClass> outClasses = new ArrayList<OWLClass>();
         ArrayList<String> labels = new ArrayList<String>();
