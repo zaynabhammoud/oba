@@ -28,6 +28,7 @@ public class ObaVirtualOntology extends ObaOntology {
     ArrayList<OWLClass> clsA, clsB;
     ArrayList<String> labelsA, labelsB;
     HashMap<String, Double> thds;
+    HashMap<String,Double> weights;
 
     public HashMap<String, Double> getThds() {
         return thds;
@@ -108,14 +109,23 @@ public class ObaVirtualOntology extends ObaOntology {
     public synchronized void init() throws OWLOntologyCreationException {
         exportClasses(ontA.getOntology().getOntology(),'A');
         exportClasses(ontB.getOntology().getOntology(),'B');
-        String[] line=properties.getProperty("thds").trim().split("/");
+        String[] line1=properties.getProperty("thds").trim().split("/");
+        String[] line2=properties.getProperty("weights").trim().split("/");
         thds=new HashMap<String,Double>();
-        for(String thsd:line){
+        weights=new HashMap<String,Double>();
+        for(String thsd:line1){
             String[] th=thsd.split(",");
             if(th.length!=2){
                 continue;
             }
             thds.put(th[0], Double.valueOf(th[1]));
+        }
+        for(String weight:line2){
+            String[] we=weight.split(",");
+            if(we.length!=2){
+                continue;
+            }
+            weights.put(we[0], Double.valueOf(we[1]));
         }
     }
 
