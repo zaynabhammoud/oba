@@ -11,26 +11,26 @@ import de.sybig.oba.server.ObaClass;
  *
  * @author zaynab
  */
-public class Candidate{
+public class Candidate {
 
     private String NameString, MostSimilarOntRes;
-    private ObaClass cls,clsMapped;
+    private ObaClass cls, clsMapped;
     private double SimilarityValue;
 
     public Candidate(ObaClass cls, ObaClass similar, double simValue) {
-        this.cls=cls;
-        clsMapped=similar;
+        this.cls = cls;
+        clsMapped = similar;
         NameString = cls.getProperty("label").getValue();
         MostSimilarOntRes = clsMapped.getProperty("label").getValue();
         SimilarityValue = simValue;
     }
-    
+
     public Candidate(ObaClass cls, ObaClass similar) {
-        this.cls=cls;
-        clsMapped=similar;
+        this.cls = cls;
+        clsMapped = similar;
         NameString = cls.getProperty("label").getValue();
         MostSimilarOntRes = clsMapped.getProperty("label").getValue();
-        SimilarityValue =0.0;
+        SimilarityValue = 0.0;
     }
 
     //Getters and Setters
@@ -76,16 +76,19 @@ public class Candidate{
 
     @Override
     public String toString() {
-        return cls.toStringID()+","+NameString+" , "+clsMapped.toStringID()+","+MostSimilarOntRes+" , "+String.valueOf(SimilarityValue);
+        return cls.toStringID() + "," + NameString + " , " + clsMapped.toStringID() + "," + MostSimilarOntRes + " , " + String.valueOf(SimilarityValue);
     }
 
     public int compareTo(Candidate c) {
-        if(NameString.equals(c.getNameString()))
-            if(SimilarityValue>c.getSimilarityValue())
+        if (NameString.equals(c.getNameString())) {
+            if (SimilarityValue > c.getSimilarityValue()) {
                 return 1;
-            else
-                if(SimilarityValue<c.getSimilarityValue())
+            } else {
+                if (SimilarityValue < c.getSimilarityValue()) {
                     return -1;
+                }
+            }
+        }
         return 0;
     }
 
