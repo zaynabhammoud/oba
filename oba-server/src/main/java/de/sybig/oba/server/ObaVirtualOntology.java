@@ -28,15 +28,15 @@ import org.semanticweb.owlapi.model.OWLOntologyCreationException;
  * @author zaynab
  */
 public class ObaVirtualOntology extends ObaOntology {
-    
+
     OntologyResource ontA, ontB;
     ArrayList<OWLClass> clsA, clsB;
     ArrayList<String> labelsA, labelsB;
     HashMap<String, Double> thds;
     HashMap<String, Double> weights;
     List<Candidate> mappings;
-    private final static int n = 2;
-    
+    private final static int n = 3;
+
     public HashMap<String, Double> getThds() {
         return thds;
     }
@@ -56,9 +56,7 @@ public class ObaVirtualOntology extends ObaOntology {
     public void setMappings(List<Candidate> mappings) {
         this.mappings = mappings;
     }
-    
-    
-    
+
     public void setThds(HashMap<String, Double> thds) {
         this.thds = thds;
     }
@@ -82,27 +80,27 @@ public class ObaVirtualOntology extends ObaOntology {
     public void setOntB(OntologyResource onto) {
         ontB = onto;
     }
-    
+
     public OntologyResource getOntA() {
         return ontA;
     }
-    
+
     public OntologyResource getOntB() {
         return ontB;
     }
-    
+
     public ArrayList<OWLClass> getClsA() {
         return clsA;
     }
-    
+
     public ArrayList<OWLClass> getClsB() {
         return clsB;
     }
-    
+
     public ArrayList<String> getLabelsA() {
         return labelsA;
     }
-    
+
     public ArrayList<String> getLabelsB() {
         return labelsB;
     }
@@ -120,14 +118,14 @@ public class ObaVirtualOntology extends ObaOntology {
         ObaOntology obOntA = ontA.getOntology();
         return obOntA.getRoot();
     }
-    
+
     @Override
     protected void scanClasses(OWLOntology ontology)
             throws CorruptIndexException, LockObtainFailedException,
             IOException {
-        
+
     }
-    
+
     @Override
     public synchronized void init() throws OWLOntologyCreationException {
         System.out.println("Initializing ontology alignment");
@@ -151,61 +149,144 @@ public class ObaVirtualOntology extends ObaOntology {
             }
             weights.put(we[0], Double.valueOf(we[1]));
         }
-        mappings=new ArrayList<Candidate>();
+        mappings = new ArrayList<Candidate>();
         try {
-            mappings=align();
+            mappings = align();
         } catch (Exception ex) {
             Logger.getLogger(ObaVirtualOntology.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
-    
+
     public List<Candidate> align() throws Exception {
+        long startTime = System.currentTimeMillis();
         System.out.println("Alignment just STARTED !!!!");
         OWLOntology ont1 = ontA.ontology.getOntology(), ont2 = ontB.ontology.getOntology();
-        int sum=getSum();
-        Scores s=new Scores();
+        int sum = getSum();
+        Scores s = new Scores();
         List<Candidate> outList = new ArrayList<Candidate>();
         int countClasses1 = clsA.size();
-        int countClasses2 = clsB.size();
+        ArrayList<OWLClass> maps=clsB;
         for (int i = 0; i < countClasses1; i++) {
-            for (int j = 0; j < countClasses2; j++) {
-                Candidate c = new Candidate(new ObaClass(clsA.get(i), ont1), new ObaClass(clsB.get(j), ont2));
-                c.setSimilarityValue(getAggregatedScore(c.getNameString(), c.getMostSimilarOntRes(),s,sum));
-//                if(c.getSimilarityValue()>0.005)
-                    outList.add(c);
+            Candidate mapped = null;
+            for (int j = 0; j < maps.size(); j++) {
+                Candidate c = new Candidate(new ObaClass(clsA.get(i), ont1), new ObaClass(maps.get(j), ont2));
+                c.setSimilarityValue(getAggregatedScore(c.getNameString(), c.getMostSimilarOntRes(), s, sum));
+                if(c.getSimilarityValue()==0)
+                    continue;
+                if(c.getSimilarityValue()==1){
+                    mapped=c;
+                    maps.remove(j);
+                    continue;
+                }
+                if (mapped == null) {
+                    mapped = c;
+                } else if (c.compareTo(mapped) == 1) {
+                    mapped = c;
+                } else if (c.compareTo(mapped) == 0) {
+                    if (s.MetricLCS(labelsA.get(i), labelsB.get(j)) <= s.MetricLCS(labelsA.get(i), mapped.getMostSimilarOntRes())) {
+                        mapped = c;
+                    }
+                }
+            }
+            if(mapped==null)
+                continue;
+            if (mapped.getSimilarityValue() > thds.get("total")) {
+                outList.add(mapped);
             }
         }
         System.out.println("Alignment just FINISHED !!!!");
+        long stopTime = System.currentTimeMillis();
+        long elapsedTime = stopTime - startTime;
+        System.out.println("TOTAL TIME : " + elapsedTime/1000 + " seconds !!!!!!");
         return outList;
     }
-    
+
     protected String processString(String label) {
-        return label.toLowerCase().replace("larval", "larva").replace("l1", "larva").replace("_", " ").replace("-", " ").trim().replace("ium", "");
+        return label.toLowerCase().replace("mature","").replace("larval", "larva").replace("tibial", "tibia").replace("_", " ").replace("-", " ").trim().replace("ium", "");
     }
-    
-    protected double getAggregatedScore(String labelA, String labelB,Scores s,int sum) throws Exception {
+
+    protected double getAggregatedScore(String labelA, String labelB, Scores s, int sum) throws Exception {
         double score = 0.0;
         labelA = processString(labelA);
         labelB = processString(labelB);
+
+        if (( labelA.contains("pupal")   && !labelB.contains("pupal"))   ||
+            (!labelA.contains("pupal")   &&  labelB.contains("pupal"))   || 
+            ( labelA.contains("larva")   && !labelB.contains("larva"))   ||
+            (!labelA.contains("larva")   &&  labelB.contains("larva"))   || 
+            ( labelA.contains("segment") && !labelB.contains("segment")) || 
+            ( labelB.contains("segment") && !labelA.contains("segment")) || 
+            ( labelA.matches(".*\\d.*")  && !labelB.matches(".*\\d.*"))  || 
+            (!labelA.matches(".*\\d.*")  &&  labelB.matches(".*\\d.*"))) {
+            return 0;
+        }
+        
+
+
+        if (labelA.startsWith("adult") && !labelB.startsWith("adult")) {
+            labelA = labelA.replace("adult ", "").trim();
+        }
+        
+        if(labelA.equals(labelB)){
+            return 1.0;
+        }
+        
+        String[] wordsA=labelA.split(" "),wordsB=labelB.split(" ");
+        int l1=wordsA.length,l2=wordsB.length;
+        if(l1==l2){
+            for(int i=0;i<l1;i++)
+                if(!wordsA[i].equals(wordsB[i])){
+                    labelA+=wordsA[i]+" ";
+                    labelB+=wordsB[i]+" ";
+                }
+        }
+        else{
+            int l=wordsA.length<wordsB.length?wordsA.length:wordsB.length;
+            for(int i=0;i<l;i++){
+                if(wordsA[i].equals(wordsB[i])){
+                    wordsA[i]="";
+                    wordsB[i]="";
+                }
+            }
+            for(int i=l1-1,j=l2-1;i<l && j<l;i--,j--){
+                if(wordsA[i].equals(wordsB[j])){
+                    wordsA[i]="";
+                    wordsB[i]="";
+                }
+            }
+            labelA=String.join(" ", wordsA);
+            labelB=String.join(" ", wordsB);
+        }
+        
+        if(labelA.equals("") || labelB.equals(""))
+            return 0.0;
         
         score += s.ISUBSimilarity(labelA, labelB) * weights.get("ISUB");
-        
+
         score += (1 - s.NormalizedLevenDistance(labelA, labelB)) * weights.get("NormLeven");
-              
+
         score += (1 - s.MetricLCS(labelA, labelB)) * weights.get("MetricLCS");
-        
+
         score += s.NGram(labelA, labelB, n) * weights.get("NGram");
-        
+
         score += s.StringKernel(labelA, labelB) * weights.get("StringKernel");
-        
+
         score += s.PreComputedCosine(labelA, labelB, n) * weights.get("cosine");
-        
+
         score = score / sum;
         return score;
     }
+
+    protected String getPrefix(String word,String[] prefixes){
+        for(String prefix:prefixes){
+            if(word.startsWith(prefix))
+                return prefix;
+        }
+        return "";
+    }
     
-    protected int getSum(){
-        int sum=0;
+    protected int getSum() {
+        int sum = 0;
         sum += weights.get("ISUB");
         sum += weights.get("NormLeven");
         sum += weights.get("MetricLCS");
@@ -214,13 +295,13 @@ public class ObaVirtualOntology extends ObaOntology {
         sum += weights.get("cosine");
         return sum;
     }
-    
+
     public void exportClasses(OWLOntology ontology, char letter) {
         ArrayList<OWLClass> outClasses = new ArrayList<OWLClass>();
         ArrayList<String> labels = new ArrayList<String>();
         Set<OWLDeclarationAxiom> classes = ontology.getAxioms(AxiomType.DECLARATION);
         for (OWLDeclarationAxiom c : classes) {
-            
+
             OWLEntity entity = c.getSignature().iterator().next();
             if (!(entity instanceof OWLClass)) {
                 // skip AnnotationProperties, ObjectProperties, DataProperites
@@ -243,5 +324,5 @@ public class ObaVirtualOntology extends ObaOntology {
                 break;
         }
     }
-    
+
 }
