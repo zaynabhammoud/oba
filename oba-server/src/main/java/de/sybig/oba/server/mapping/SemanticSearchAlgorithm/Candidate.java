@@ -76,7 +76,7 @@ public class Candidate {
 
     @Override
     public String toString() {
-        return cls.toStringID() + "," + NameString + " , " + clsMapped.toStringID() + "," + MostSimilarOntRes + " , " + String.valueOf(SimilarityValue);
+        return cls.toStringID().split("#")[1] + "," + NameString + " , " + clsMapped.toStringID().split("#")[1] + "," + MostSimilarOntRes + " , " + String.valueOf(SimilarityValue);
     }
 
     public int compareTo(Candidate c) {
