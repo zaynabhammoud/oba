@@ -93,36 +93,5 @@
             <version>1.4-SNAPSHOT</version>
             <scope>provided</scope>
         </dependency>
-        <dependency>
-            <groupId>cc.mallet</groupId>
-            <artifactId>mallet</artifactId>
-            <version>2.0.7</version>
-            <type>jar</type>
-        </dependency>
-        <dependency>
-            <groupId>hsqldb</groupId>
-            <artifactId>hsqldb</artifactId>
-            <version>1.8.0.10</version>
-        </dependency>
-        <dependency>
-            <groupId>info.debatty</groupId>
-            <artifactId>java-string-similarity</artifactId>
-            <version>RELEASE</version>
-            </dependency>
-        <dependency>
-        <groupId>com.nolanlawson.relatedness</groupId>
-        <artifactId>relatedness-calculator</artifactId>
-        <version>1.0</version>
-        </dependency>
-        <dependency>
-            <groupId>edu.cmu.lti</groupId>
-            <artifactId>jawjaw</artifactId>
-            <version>1.0.2</version>
-        </dependency>
-        <dependency>
-            <groupId>edu.cmu.lti</groupId>
-            <artifactId>ws4j</artifactId>
-            <version>1.0.1</version>
-        </dependency>
     </dependencies>
 </project>
