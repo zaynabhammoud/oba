@@ -9,6 +9,7 @@ import de.sybig.oba.server.mapping.SemanticSearchAlgorithm.Candidate;
 import de.sybig.oba.server.mapping.SemanticSearchAlgorithm.Scores;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Set;
@@ -35,7 +36,7 @@ public class ObaVirtualOntology extends ObaOntology {
     HashMap<String, Double> thds;
     HashMap<String, Double> weights;
     List<Candidate> mappings;
-    private final static int n = 3;
+    private final static int n = 3;    
 
     public HashMap<String, Double> getThds() {
         return thds;
@@ -112,11 +113,8 @@ public class ObaVirtualOntology extends ObaOntology {
      * @return The root of the ontology.
      */
     @Override
-    public ObaClass getRoot() {
-        // the root could also be retrieved directly from the ontology with
-        // ontology.getOWLOntologyManager().getOWLDataFactory().getOWLThing()'
-        ObaOntology obOntA = ontA.getOntology();
-        return obOntA.getRoot();
+    public ObaClass getOntologyClass(final String cls, final String ns) {
+        return ontA.ontology.getOntologyClass(cls, ns);
     }
 
     @Override
@@ -128,7 +126,7 @@ public class ObaVirtualOntology extends ObaOntology {
 
     @Override
     public synchronized void init() throws OWLOntologyCreationException {
-        System.out.println("Initializing ontology alignment");
+        logger.info("Initializing ontology alignment");
         exportClasses(ontA.getOntology().getOntology(), 'A');
         exportClasses(ontB.getOntology().getOntology(), 'B');
         String[] line1 = properties.getProperty("thds").trim().split("/");
@@ -159,22 +157,23 @@ public class ObaVirtualOntology extends ObaOntology {
 
     public List<Candidate> align() throws Exception {
         long startTime = System.currentTimeMillis();
-        System.out.println("Alignment just STARTED !!!!");
+        logger.info("Alignment just STARTED !!!!");
         OWLOntology ont1 = ontA.ontology.getOntology(), ont2 = ontB.ontology.getOntology();
         int sum = getSum();
         Scores s = new Scores();
         List<Candidate> outList = new ArrayList<Candidate>();
         int countClasses1 = clsA.size();
-        ArrayList<OWLClass> maps=clsB;
+        ArrayList<OWLClass> maps = clsB;
         for (int i = 0; i < countClasses1; i++) {
             Candidate mapped = null;
             for (int j = 0; j < maps.size(); j++) {
                 Candidate c = new Candidate(new ObaClass(clsA.get(i), ont1), new ObaClass(maps.get(j), ont2));
                 c.setSimilarityValue(getAggregatedScore(c.getNameString(), c.getMostSimilarOntRes(), s, sum));
-                if(c.getSimilarityValue()==0)
+                if (c.getSimilarityValue() == 0) {
                     continue;
-                if(c.getSimilarityValue()==1){
-                    mapped=c;
+                }
+                if (c.getSimilarityValue() == 1) {
+                    mapped = c;
                     maps.remove(j);
                     continue;
                 }
@@ -188,21 +187,22 @@ public class ObaVirtualOntology extends ObaOntology {
                     }
                 }
             }
-            if(mapped==null)
+            if (mapped == null) {
                 continue;
+            }
             if (mapped.getSimilarityValue() > thds.get("total")) {
                 outList.add(mapped);
             }
         }
-        System.out.println("Alignment just FINISHED !!!!");
+        logger.info("Alignment just FINISHED !!!!");
         long stopTime = System.currentTimeMillis();
         long elapsedTime = stopTime - startTime;
-        System.out.println("TOTAL TIME : " + elapsedTime/1000 + " seconds !!!!!!");
+        logger.info("TOTAL TIME : " + elapsedTime / 1000 + " seconds !!!!!!");
         return outList;
     }
 
     protected String processString(String label) {
-        return label.toLowerCase().replace("mature","").replace("larval", "larva").replace("tibial", "tibia").replace("_", " ").replace("-", " ").trim().replace("ium", "");
+        return label.toLowerCase().replace("larval", "larva").replace("tibial", "tibia").replace("_", " ").replace("-", " ").trim().replace("ium", "");
     }
 
     protected double getAggregatedScore(String labelA, String labelB, Scores s, int sum) throws Exception {
@@ -210,57 +210,78 @@ public class ObaVirtualOntology extends ObaOntology {
         labelA = processString(labelA);
         labelB = processString(labelB);
 
-        if (( labelA.contains("pupal")   && !labelB.contains("pupal"))   ||
-            (!labelA.contains("pupal")   &&  labelB.contains("pupal"))   || 
-            ( labelA.contains("larva")   && !labelB.contains("larva"))   ||
-            (!labelA.contains("larva")   &&  labelB.contains("larva"))   || 
-            ( labelA.contains("segment") && !labelB.contains("segment")) || 
-            ( labelB.contains("segment") && !labelA.contains("segment")) || 
-            ( labelA.matches(".*\\d.*")  && !labelB.matches(".*\\d.*"))  || 
-            (!labelA.matches(".*\\d.*")  &&  labelB.matches(".*\\d.*"))) {
+        if ((labelA.contains("pupal") && !labelB.contains("pupal"))
+                || (!labelA.contains("pupal") && labelB.contains("pupal"))
+                || (labelA.contains("larva") && !labelB.contains("larva"))
+                || (!labelA.contains("larva") && labelB.contains("larva"))
+                || (labelA.contains("segment") && !labelB.contains("segment"))
+                || (labelB.contains("segment") && !labelA.contains("segment"))
+                || (labelA.matches(".*\\d.*") && !labelB.matches(".*\\d.*"))
+                || (!labelA.matches(".*\\d.*") && labelB.matches(".*\\d.*"))) {
             return 0;
         }
-        
 
-
-        if (labelA.startsWith("adult") && !labelB.startsWith("adult")) {
-            labelA = labelA.replace("adult ", "").trim();
+        if (labelB.startsWith("pupal/adult")) {
+            if (labelA.startsWith("pupal")) {
+                labelB = labelB.replace("pupal/adult", "pupal");
+            } else if (labelA.startsWith("adult")) {
+                labelB = labelB.replace("pupal/adult", "adult");
+            }
         }
-        
-        if(labelA.equals(labelB)){
+
+        if (labelB.startsWith("embryonic/larva")) {
+            if (labelA.startsWith("larva")) {
+                labelB = labelB.replace("embryonic/larva", "larva");
+            } else if (labelA.startsWith("embryonic")) {
+                labelB = labelB.replace("embryonic/larva", "embryonic");
+            }
+        }
+
+        if (labelA.equals(labelB)) {
             return 1.0;
         }
+
+        String[] wordsA = labelA.split(" "), wordsB = labelB.split(" ");
+        ArrayList<String> wordsBArray=new ArrayList<String>();
         
-        String[] wordsA=labelA.split(" "),wordsB=labelB.split(" ");
-        int l1=wordsA.length,l2=wordsB.length;
-        if(l1==l2){
-            for(int i=0;i<l1;i++)
-                if(!wordsA[i].equals(wordsB[i])){
-                    labelA+=wordsA[i]+" ";
-                    labelB+=wordsB[i]+" ";
-                }
-        }
-        else{
-            int l=wordsA.length<wordsB.length?wordsA.length:wordsB.length;
-            for(int i=0;i<l;i++){
-                if(wordsA[i].equals(wordsB[i])){
-                    wordsA[i]="";
-                    wordsB[i]="";
+        int l1 = wordsA.length, l2 = wordsB.length;
+        wordsBArray.addAll(Arrays.asList(wordsB));
+        if (l1 == l2) {
+            int i;
+            //Search for flipped names
+            for(i=0;i<l1;i++)
+                if(!wordsBArray.contains(wordsA[i]))
+                    break;
+            if(i==l1)
+                return 1.0;
+            for (i = 0; i < l1; i++) {
+                if (!wordsA[i].equals(wordsB[i])) {
+                    labelA += wordsA[i] + " ";
+                    labelB += wordsB[i] + " ";
                 }
             }
-            for(int i=l1-1,j=l2-1;i<l && j<l;i--,j--){
-                if(wordsA[i].equals(wordsB[j])){
-                    wordsA[i]="";
-                    wordsB[i]="";
+        } else {
+            int l = wordsA.length < wordsB.length ? wordsA.length : wordsB.length;
+            for (int i = 0; i < l; i++) {
+                if (wordsA[i].equals(wordsB[i])) {
+                    wordsA[i] = "";
+                    wordsB[i] = "";
                 }
             }
-            labelA=String.join(" ", wordsA);
-            labelB=String.join(" ", wordsB);
+            for (int i = l1 - 1, j = l2 - 1; i < l && j < l; i--, j--) {
+                if (wordsA[i].equals(wordsB[j])) {
+                    wordsA[i] = "";
+                    wordsB[i] = "";
+                }
+            }
+            labelA = String.join(" ", wordsA);
+            labelB = String.join(" ", wordsB);
         }
-        
-        if(labelA.equals("") || labelB.equals(""))
+
+        if (labelA.equals("") || labelB.equals("")) {
             return 0.0;
-        
+        }
+
         score += s.ISUBSimilarity(labelA, labelB) * weights.get("ISUB");
 
         score += (1 - s.NormalizedLevenDistance(labelA, labelB)) * weights.get("NormLeven");
@@ -277,14 +298,6 @@ public class ObaVirtualOntology extends ObaOntology {
         return score;
     }
 
-    protected String getPrefix(String word,String[] prefixes){
-        for(String prefix:prefixes){
-            if(word.startsWith(prefix))
-                return prefix;
-        }
-        return "";
-    }
-    
     protected int getSum() {
         int sum = 0;
         sum += weights.get("ISUB");
@@ -324,5 +337,5 @@ public class ObaVirtualOntology extends ObaOntology {
                 break;
         }
     }
-
+  
 }
