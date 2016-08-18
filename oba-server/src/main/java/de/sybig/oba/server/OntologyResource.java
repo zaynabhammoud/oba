@@ -39,6 +39,8 @@ public class OntologyResource extends AbstractOntolgyResource {
         System.err.println("gettingen children for " + cls);
         // String ns = cls.getMatrixParameters().get("ns").get(0);
         OWLClass c = getClassFromPathSegement(cls);
+        if(ontology instanceof ObaVirtualOntology)
+            return OntologyHelper.getChildren(c, ((ObaVirtualOntology) ontology).ontA.ontology.getOntology());
         return OntologyHelper.getChildren(c, ontology.getOntology());
     }
 
@@ -47,6 +49,8 @@ public class OntologyResource extends AbstractOntolgyResource {
     @Produces("text/plain, application/json, text/html")
     public Set<ObaClass> getParents(@PathParam("cls") PathSegment cls) {
         OWLClass c = getClassFromPathSegement(cls, null);
+        if(ontology instanceof ObaVirtualOntology)
+            return OntologyHelper.getParents(c, ((ObaVirtualOntology) ontology).ontA.ontology.getOntology());
         return OntologyHelper.getParents(c, ontology.getOntology());
     }
 
