@@ -46,18 +46,18 @@ import org.slf4j.LoggerFactory;
 
 public class ObaOntology {
 
-    private OWLOntology onto;
+    protected OWLOntology onto;
     protected Properties properties;
     private static final int MAX_HITS = 500;
     private final Version luceneVersion = Version.LUCENE_24;
-    private IRI iri;
-    private RAMDirectory idx;
+    protected IRI iri;
+    protected RAMDirectory idx;
     OWLDataFactory dataFactory;
-    private OWLOntologyManager manager;
+    protected OWLOntologyManager manager;
     Set<ObaClass> orphanChildren = new HashSet<ObaClass>();
     Set<ObaClass> obsoleteClasses = new HashSet<ObaClass>();
-    private Logger logger = LoggerFactory.getLogger(ObaOntology.class);
-    private List<String> indexAnnotations;
+    protected Logger logger = LoggerFactory.getLogger(ObaOntology.class);
+    protected List<String> indexAnnotations;
     private final String OBSOLTE = "is_obsolete";
 
     // private boolean initializing = false;
