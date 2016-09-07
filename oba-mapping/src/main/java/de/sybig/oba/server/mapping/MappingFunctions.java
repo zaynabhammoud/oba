@@ -11,6 +11,7 @@ import de.sybig.oba.server.OntologyFunctions;
 import de.sybig.oba.server.OntologyHandler;
 import de.sybig.oba.server.OntologyResource;
 import de.sybig.oba.server.mapping.SemanticSearchAlgorithm.Candidate;
+import java.util.ArrayList;
 import java.util.List;
 import javax.ws.rs.*;
 import org.slf4j.Logger;
@@ -49,16 +50,29 @@ public class MappingFunctions extends OntologyFunctions implements
         StringBuilder out = new StringBuilder();
 
         out.append("<h1>Available functions</h1>\n");
-        out.append("<dt>/GetMappings</dt><dt>Displays the mappings of the alignment virtual ontology</dt>");
+        out.append("<dt>/GetMappings/{method}/</dt><dt>Displays the method results of the alignment</dt>");
         out.append("<dl>");
         return out.toString();
     }
 
     @GET
-    @Path("GetMappings/")
+    @Path("GetMappings/{method}")
     @Produces("text/html,text/plain")
-    public String GetMappings() throws Exception {
-        List<Candidate> mappings = ovo.getMappings();
+    public String GetMappings(@PathParam("method") String method) throws Exception {
+        List<Candidate> mappings;
+        if(method.equals("lexical")){
+            mappings=ovo.getMappingsLex();
+        }
+        else
+            if(method.equals("structural")){
+                mappings=ovo.getMappingsStr();
+            }
+            else 
+                if(method.equals("combined")){
+                    mappings=ovo.getMappings();
+                }
+        else
+                    return "Undefined Method";
         System.out.println("START PRINTING !!!");
         String out = "<dt><h3>All Mapped Classes : " + mappings.size() + "</h3></dt>";
         out += "<table align=center border=1><tr><th>BeetleID</th><th>Beetle Label</th><th>FlyID</th><th>Fly Label</th><th>Score</th></tr>";
