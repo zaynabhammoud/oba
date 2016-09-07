@@ -7,6 +7,7 @@ package de.sybig.oba.server;
 
 import de.sybig.oba.server.mapping.SemanticSearchAlgorithm.Candidate;
 import de.sybig.oba.server.mapping.SemanticSearchAlgorithm.Scores;
+import de.sybig.oba.server.mapping.SemanticSearchAlgorithm.TriboliumFunctions;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -35,75 +36,14 @@ public class ObaVirtualOntology extends ObaOntology {
     ArrayList<String> labelsA, labelsB;
     HashMap<String, Double> thds;
     HashMap<String, Double> weights;
-    List<Candidate> mappings;
-    private final static int n = 3;    
+    List<Candidate> mappingsLex, mappingsStr, mappings;
+    HashMap<ObaClass, Candidate> mapps;
+    HashMap<ObaClass, List<Candidate>> mappsStr;
+    private final static int n = 3;
 
-    public HashMap<String, Double> getThds() {
-        return thds;
-    }
-
-    public HashMap<String, Double> getWeights() {
-        return weights;
-    }
-
-    public void setWeights(HashMap<String, Double> weights) {
-        this.weights = weights;
-    }
-
-    public List<Candidate> getMappings() {
-        return mappings;
-    }
-
-    public void setMappings(List<Candidate> mappings) {
-        this.mappings = mappings;
-    }
-
-    public void setThds(HashMap<String, Double> thds) {
-        this.thds = thds;
-    }
-
-    /**
-     * Sets the ontology used in iteration. We consider that the OntA is one
-     * that we will iterate over it.
-     *
-     * @param ontology
-     */
-    public void setOntA(OntologyResource onto) {
-        ontA = onto;
-    }
-
-    /**
-     * Sets the ontology used in comparison. The elements of this ontology will
-     * be compared and mapped to OntA.
-     *
-     * @param ontology
-     */
-    public void setOntB(OntologyResource onto) {
-        ontB = onto;
-    }
-
-    public OntologyResource getOntA() {
-        return ontA;
-    }
-
-    public OntologyResource getOntB() {
-        return ontB;
-    }
-
-    public ArrayList<OWLClass> getClsA() {
-        return clsA;
-    }
-
-    public ArrayList<OWLClass> getClsB() {
-        return clsB;
-    }
-
-    public ArrayList<String> getLabelsA() {
-        return labelsA;
-    }
-
-    public ArrayList<String> getLabelsB() {
-        return labelsB;
+    @Override
+    public ObaClass getRoot() {
+        return ontA.ontology.getRoot();
     }
 
     /**
@@ -148,14 +88,20 @@ public class ObaVirtualOntology extends ObaOntology {
             weights.put(we[0], Double.valueOf(we[1]));
         }
         mappings = new ArrayList<Candidate>();
+        mappingsLex = new ArrayList<Candidate>();
+        mappingsStr = new ArrayList<Candidate>();
+        mapps = new HashMap<ObaClass, Candidate>();
+        mappsStr = new HashMap<ObaClass, List<Candidate>>();
         try {
-            mappings = align();
+            mappings = alignLex();
+            mappingsStr = alignStruc();
+            mappings = combineAlign();
         } catch (Exception ex) {
             Logger.getLogger(ObaVirtualOntology.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
 
-    public List<Candidate> align() throws Exception {
+    public List<Candidate> alignLex() throws Exception {
         long startTime = System.currentTimeMillis();
         logger.info("Alignment just STARTED !!!!");
         OWLOntology ont1 = ontA.ontology.getOntology(), ont2 = ontB.ontology.getOntology();
@@ -192,6 +138,7 @@ public class ObaVirtualOntology extends ObaOntology {
             }
             if (mapped.getSimilarityValue() > thds.get("total")) {
                 outList.add(mapped);
+                mapps.put(mapped.getCls(), mapped);
             }
         }
         logger.info("Alignment just FINISHED !!!!");
@@ -242,18 +189,21 @@ public class ObaVirtualOntology extends ObaOntology {
         }
 
         String[] wordsA = labelA.split(" "), wordsB = labelB.split(" ");
-        ArrayList<String> wordsBArray=new ArrayList<String>();
-        
+        ArrayList<String> wordsBArray = new ArrayList<String>();
+
         int l1 = wordsA.length, l2 = wordsB.length;
         wordsBArray.addAll(Arrays.asList(wordsB));
         if (l1 == l2) {
             int i;
             //Search for flipped names
-            for(i=0;i<l1;i++)
-                if(!wordsBArray.contains(wordsA[i]))
+            for (i = 0; i < l1; i++) {
+                if (!wordsBArray.contains(wordsA[i])) {
                     break;
-            if(i==l1)
+                }
+            }
+            if (i == l1) {
                 return 1.0;
+            }
             for (i = 0; i < l1; i++) {
                 if (!wordsA[i].equals(wordsB[i])) {
                     labelA += wordsA[i] + " ";
@@ -277,11 +227,11 @@ public class ObaVirtualOntology extends ObaOntology {
             labelA = String.join(" ", wordsA);
             labelB = String.join(" ", wordsB);
         }
-
+        
         if (labelA.equals("") || labelB.equals("")) {
             return 0.0;
         }
-
+  
         score += s.ISUBSimilarity(labelA, labelB) * weights.get("ISUB");
 
         score += (1 - s.NormalizedLevenDistance(labelA, labelB)) * weights.get("NormLeven");
@@ -323,7 +273,10 @@ public class ObaVirtualOntology extends ObaOntology {
             OWLClass cls = (OWLClass) entity;
             outClasses.add(cls);
             ObaClass oCls = new ObaClass(cls, ontology);
-            labels.add(oCls.getProperty("label").getValue());
+            ObaAnnotation label = oCls.getProperty("label");
+            if (label != null) {
+                    labels.add(label.getValue());
+            }
         }
         switch (letter) {
             case 'A':
@@ -337,5 +290,184 @@ public class ObaVirtualOntology extends ObaOntology {
                 break;
         }
     }
-  
+
+    public List<Candidate> alignStruc() throws Exception {
+        List<Candidate> outList = new ArrayList<Candidate>();
+        TriboliumFunctions func = new TriboliumFunctions(ontA.ontology);
+        Scores s = new Scores();
+        int sum = getSum();
+        ObaClass rootA = new ObaClass(ontA.getCls("TrOn_0000001", func.TRIBOLIUM_NS), ontA.ontology.onto);
+        ObaClass rootB = new ObaClass(ontB.getCls("FBbt_10000000", "http://purl.org/obo/owlapi/fly_anatomy.ontology#"), ontB.ontology.onto);
+        Set<ObaClass> children = OntologyHelper.getChildren(rootA);
+        Candidate c = new Candidate(rootA, rootB, 3.0);
+        List<Candidate> l = new ArrayList<Candidate>();
+        l.add(c);
+        mappsStr.put(rootA, l);
+        outList.add(c);
+        for (ObaClass child : children) {
+            outList.addAll(recAlign(child, c, func, s, sum));
+        }
+        return outList;
+    }
+
+    public List<Candidate> recAlign(ObaClass cls, Candidate startCls, TriboliumFunctions f, Scores s, int sum) throws Exception {
+        List<Candidate> outList = new ArrayList<Candidate>();
+        List<Candidate> candidates = getCandidatesChildren(cls, startCls, s, sum, 1);
+        Candidate best = getMaxCandidate(candidates);
+
+        if (best != null) {
+            outList.add(best);
+        } else {
+            best = startCls;
+        }
+        //Children mapping
+        Set<ObaClass> childrenCls = OntologyHelper.getChildren(cls);
+        //The Class is a leaf
+        if (childrenCls == null || childrenCls.isEmpty()) {
+            return outList;
+        }
+        for (ObaClass child : childrenCls) {
+            outList.addAll(recAlign(child, best, f, s, sum));
+        }
+        return outList;
+    }
+
+    public List<Candidate> getCandidatesChildren(ObaClass cls, Candidate startClass, Scores s, int sum, int level) throws Exception {
+        if (level == 4) {
+            return new ArrayList<Candidate>();
+        }
+        List<Candidate> candidates = new ArrayList<Candidate>();
+        //loop for children
+        Set<ObaClass> children = OntologyHelper.getChildren(startClass.getClsMapped().getReal(), ontB.ontology.onto);
+        if (children == null || children.isEmpty()) {
+            return candidates;
+        }
+        String labelA = cls.getProperty("label").getValue();
+        for (ObaClass child : children) {
+            //calculate the similarity between the class and the child
+            String labelB = child.getProperty("label").getValue();
+            double similarity = getAggregatedScore(labelA, labelB, s, sum);
+            similarity = similarity * 1 / 7;
+            similarity += startClass.getSimilarityValue() * 6 / 7;
+            Candidate c = new Candidate(cls, child, similarity);
+            candidates.add(c);
+            candidates.addAll(getCandidatesChildren(cls, c, s, sum, level + 1));
+        }
+        return candidates;
+    }
+
+    public Candidate getMaxCandidate(List<Candidate> candidates) {
+        if (candidates == null || candidates.isEmpty()) {
+            return null;
+        }
+        Candidate best = candidates.get(0);
+        mappsStr.put(best.getCls(), candidates);
+        for (int i = 1; i < candidates.size(); i++) {
+            if (candidates.get(i).compareTo(best) == 1) {
+                best = candidates.get(i);
+            }
+        }
+        return best;
+    }
+
+    public Candidate getMaxCandidate(List<Candidate> candidates, Candidate bestLex) {
+        Candidate best = candidates.get(0);
+        if (bestLex != null && best.getClsMapped() == bestLex.getClsMapped()) {
+            best.setSimilarityValue(best.getSimilarityValue() + bestLex.getSimilarityValue());
+        }
+        for (int i = 1; i < candidates.size(); i++) {
+            if (bestLex != null && candidates.get(i).getClsMapped() == bestLex.getClsMapped()) {
+                candidates.get(i).setSimilarityValue(candidates.get(i).getSimilarityValue() + bestLex.getSimilarityValue());
+            }
+            if (candidates.get(i).compareTo(best) == 1) {
+                best = candidates.get(i);
+            }
+
+        }
+        return best;
+    }
+
+    public List<Candidate> combineAlign() {
+        List<Candidate> outList = new ArrayList<Candidate>();
+        Set<ObaClass> classes = mappsStr.keySet();
+        for (ObaClass cls : classes) {
+            List<Candidate> candidates = mappsStr.get(cls);
+            Candidate bestLex = mapps.get(cls);
+            outList.add(getMaxCandidate(candidates, bestLex));
+        }
+        return outList;
+    }
+
+    //Getters and Setters
+    public HashMap<String, Double> getThds() {
+        return thds;
+    }
+
+    public HashMap<String, Double> getWeights() {
+        return weights;
+    }
+
+    public void setWeights(HashMap<String, Double> weights) {
+        this.weights = weights;
+    }
+
+    public List<Candidate> getMappings() {
+        return mappings;
+    }
+
+    public List<Candidate> getMappingsLex() {
+        return mappingsLex;
+    }
+
+    public List<Candidate> getMappingsStr() {
+        return mappingsStr;
+    }
+
+    public void setThds(HashMap<String, Double> thds) {
+        this.thds = thds;
+    }
+
+    /**
+     * Sets the ontology used in iteration. We consider that the OntA is one
+     * that we will iterate over it.
+     *
+     * @param ontology
+     */
+    public void setOntA(OntologyResource onto) {
+        ontA = onto;
+    }
+
+    /**
+     * Sets the ontology used in comparison. The elements of this ontology will
+     * be compared and mapped to OntA.
+     *
+     * @param ontology
+     */
+    public void setOntB(OntologyResource onto) {
+        ontB = onto;
+    }
+
+    public OntologyResource getOntA() {
+        return ontA;
+    }
+
+    public OntologyResource getOntB() {
+        return ontB;
+    }
+
+    public ArrayList<OWLClass> getClsA() {
+        return clsA;
+    }
+
+    public ArrayList<OWLClass> getClsB() {
+        return clsB;
+    }
+
+    public ArrayList<String> getLabelsA() {
+        return labelsA;
+    }
+
+    public ArrayList<String> getLabelsB() {
+        return labelsB;
+    }
 }
